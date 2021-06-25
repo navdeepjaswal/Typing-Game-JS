@@ -1,0 +1,258 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Game</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital@1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        body {
+            background: #74ebd5;
+            background: -webkit-linear-gradient(to right, #ACB6E5, #74ebd5);
+            background: linear-gradient(to right, #6f80d2, #23e9c5);
+            margin-top: 3%;
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container p::selection {
+            background: rgb(255, 255, 255);
+            color: black;
+        }
+        
+        .timer-div p {
+            color: white;
+            margin: 0;
+        }
+        
+        .timer-div {
+            text-align: center;
+            font-size: 60px;
+            margin-bottom: 2%;
+        }
+        
+        .container {
+            text-align: center;
+            border: white 1px solid;
+            border-radius: 25px;
+            width: 50%;
+            margin: 0 auto;
+        }
+        
+        #sample-text {
+            color: white;
+            font-size: 2.3em;
+            padding: 0 10px;
+        }
+        
+        #input-text {
+            width: 90%;
+            height: 20vh;
+            font-size: 24px;
+            resize: none;
+            padding: 5px;
+            margin-bottom: 36px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        #input-text:focus-visible {
+            outline: none;
+        }
+        
+        #nextButtonDiv {
+            display: none;
+            transition: 2s;
+        }
+        
+        #next {
+            font-size: 30px;
+            font-weight: 500;
+            font-family: 'Poppins', sans-serif;
+            padding: 5px;
+            margin-bottom: 5px;
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+        
+        #next:hover {
+            opacity: 0.8;
+            transform: scale(1.2);
+            transition: 0.2s;
+        }
+        
+        .animate__tada {
+            animation-delay: 0.05s;
+            animation-duration: 1.4s;
+        }
+        
+        .correct {
+            color: #6df66d !important;
+        }
+        
+        .incorrect {
+            color: #ff0000 !important;
+            text-decoration: underline;
+        }
+        
+        #emojisDiv {
+            display: none;
+            padding-top: 3%;
+        }
+        
+        #emojis {
+            color: white;
+            font-size: 3.3rem;
+        }
+    </style>
+</head>
+
+<body onpaste="return false">
+    <!-- change to 'False' to disable pasting text -->
+    <div class="timer-div">
+        <p> <span>⏲️ - </span><span id="timer">0.0 </span> s</p>
+    </div>
+
+
+    <div class="container">
+        <p id="sample-text"></p>
+
+        <textarea type="text" name="input-text" id="input-text" onkeyup="compareText(this,event)"></textarea>
+
+        <div id="nextButtonDiv">
+            <button type="button" class="next" onclick="onNext()" id="next">
+                 Next
+            </button>
+        </div>
+    </div>
+    <div style="text-align: center;" id="emojisDiv">
+        <p id="emojis" class="animate__animated"> 🎊🎉👏 Words Per Minute: <span id="wpm"></span></p>
+    </div>
+
+    <script>
+        var count = 0.0;
+        var timer;
+        var sampleText = document.getElementById('sample-text');
+        var inputText = document.getElementById("input-text");
+        var next = document.getElementById("nextButtonDiv");
+
+
+        updateQuote();
+        document.getElementById("input-text").focus();
+
+        function startTimer() {
+            timer = setInterval(() => {
+                count += .1;
+                document.getElementById('timer').innerHTML = count.toFixed(2);
+            }, 100);
+        }
+
+        function matchSuccessful() {
+            next.style.display = "block";
+            inputText.setAttribute('readonly', true);
+            confetti();
+            calculate_WPM();
+        }
+
+
+        function onNext() {
+            inputText.value = "";
+            document.getElementById('sample-text').innerHTML = '';
+            document.getElementById("nextButtonDiv").style.display = "none";
+            document.getElementById("emojisDiv").style.display = "none";
+            count = 0.0;
+            document.getElementById('timer').innerHTML = count;
+            timer = null;
+            updateQuote();
+            inputText.removeAttribute('readonly');
+
+        }
+
+        function calculate_WPM() {
+            var wordArr = document.getElementById('sample-text').textContent.split(' ');
+            var wordCount = wordArr.length;
+            var wpm = (wordCount / count) * 60;
+            document.getElementById("wpm").innerHTML = wpm.toFixed(2);
+        }
+
+        function confetti() {
+            var confetti = document.getElementById("emojisDiv");
+            var emojis = document.getElementById("emojis");
+            confetti.style.display = "block";
+            emojis.classList.add("animate__tada");
+        }
+
+        function updateQuote() {
+            fetch('https://api.quotable.io/random?minLength=100&maxLength=200')
+                .then(function(response) {
+                    return response.json()
+                }).then(function(data) {
+                    sampleText = data.content;
+
+                    sampleText.split('').forEach(character => {
+                        const charSpan = document.createElement('span')
+                        charSpan.innerText = character
+                        document.getElementById('sample-text').appendChild(charSpan)
+                    });
+                })
+
+        }
+
+
+
+        function compareText(userInput, event) {
+            var userText = userInput.value;
+            var match = true;
+
+            if (timer == null) {
+                startTimer();
+            }
+
+
+            const typedCharArray = userText.split('')
+            const charArray = sampleText.split('')
+            const charSpan = document.getElementById('sample-text').getElementsByTagName('span');
+
+            console.log(event.keyCode);
+            if (event.keyCode == 8) {
+                for (var i = 0; i < charSpan.length; i++) {
+                    charSpan[i].classList.remove('correct');
+                    charSpan[i].classList.remove('incorrect');
+                }
+            }
+            typedCharArray.forEach((character, index) => {
+                if (character === "'" && charArray[index] === "’") {
+                    charSpan[index].classList.add('correct')
+                    charSpan[index].classList.remove('incorrect');
+                } else {
+                    if (character == null) {
+                        charSpan[index].classList.remove('incorrect')
+                        charSpan[index].classList.remove('correct')
+                        match = false;
+
+                    } else if (character === charArray[index]) {
+                        charSpan[index].classList.add('correct')
+                        charSpan[index].classList.remove('incorrect');
+                    } else {
+                        charSpan[index].classList.add('incorrect')
+                        charSpan[index].classList.remove('correct')
+                        match = false;
+                    }
+                }
+
+
+            })
+            if (match && (typedCharArray.length == charArray.length)) {
+                clearInterval(timer)
+                matchSuccessful()
+            }
+        }
+    </script>
+
+</body>
+
+</html>
